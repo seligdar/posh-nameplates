@@ -1,0 +1,74 @@
+[h1]Posh Nameplates[/h1]
+WoW-style nameplates for Kenshi: a name and a health bar over every character on screen, like in a strategy game.
+[i]Русское описание ниже. 中文说明在下方。[/i]
+
+[h2]What it shows[/h2]
+[list]
+[*]Name and health bar. The bar shows the worst of head, chest and stomach, so you see how close someone is to a knockout.
+[*]Colour by attitude: red enemies, orange unfriendly, yellow neutral, green friendly, blue your own people.
+[*]A pale trail shows the health just lost. A thin red bar shows blood.
+[*]When someone is knocked out, the bar turns dark red and shows how far they are from death.
+[*]A skull with the bounty over wanted people, coins over traders.
+[*]Unique characters (faction leaders, bosses, unique recruits) get a purple name.
+[*]Optionally no plates for knocked-out NPCs, so in big battles the plates go to those still standing.
+[/list]
+
+[h2]How it behaves[/h2]
+[list]
+[*]Everyone on screen gets a plate, not only the people you fight. People inside buildings get none until you lift the roof.
+[*]Plates shrink with the camera zoom instead of vanishing, and they do not blink.
+[*]In a crowd plates stack like in WoW: enemies first, then by distance.
+[*]Plates are drawn under game windows, so they never cover your menus.
+[*]If you like a clean screen, plates can show only by a key: while you hold it (N by default; G, X, Z, U, P, Caps Lock or Alt), or switched on and off by it. Pick the mode and the key in Mod Config Menu.
+[/list]
+
+[h2]Settings[/h2]
+With [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3813761584]Mod Config Menu[/url] you get 35 settings in game: who gets a plate (always, near my people, in a fight or never, for each attitude), showing plates only by a key, names, blood bar, bounty and trader marks, sizes, stacking and every colour. Changes apply at once, no restart. Without MCM the defaults are used.
+
+[h2]Requirements[/h2]
+[list]
+[*][url=https://www.nexusmods.com/kenshi/mods/847]RE_Kenshi[/url] 0.3.3 or newer
+[*][url=https://www.nexusmods.com/kenshi/mods/2068]KenshiLua[/url] (the latest version), enabled in the launcher
+[*]Optional: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3813761584]Mod Config Menu[/url] for the settings
+[/list]
+
+[h2]Tips[/h2]
+[list]
+[*]Turn off the game's own names over your characters in the game options, the plates already show them.
+[*]Goes well with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3821781631]Posh Damage Numbers[/url]. Put Posh Nameplates after it in the mod list.
+[/list]
+Script and interface only: no game data is changed. Safe to add to or remove from an existing save.
+
+[h2]Русский[/h2]
+Таблички как в WoW: имя и полоска здоровья над каждым персонажем на экране, как в стратегии.
+[list]
+[*]Полоска показывает худшую часть тела из головы, груди и живота. Видно, сколько осталось до нокаута.
+[*]Цвет зависит от отношения: красный у врагов, оранжевый у недружелюбных, жёлтый у нейтральных, зелёный у друзей, синий у своих.
+[*]Светлый след показывает только что потерянное здоровье. Тонкая красная полоска показывает кровь.
+[*]Если персонаж без сознания, полоска становится тёмно-красной и показывает, сколько осталось до смерти.
+[*]Над разыскиваемыми видны череп и сумма награды, над торговцами монеты.
+[*]У уникальных персонажей (лидеры фракций, боссы, уникальные наёмники) фиолетовое имя.
+[*]Можно спрятать таблички у NPC без сознания, тогда в больших боях таблички достаются тем, кто ещё стоит.
+[*]Таблички есть у всех на экране. У тех, кто в зданиях, их нет, пока не поднята крыша.
+[*]При отдалении камеры таблички уменьшаются, а не пропадают, и не мигают. В толпе они встают стопкой.
+[*]Таблички можно показывать только по клавише: пока она зажата (по умолчанию N) или нажатием включать и выключать. Режим и клавиша выбираются в Mod Config Menu.
+[/list]
+С [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3813761584]Mod Config Menu[/url] в игре доступны 35 настроек: кому показывать таблички, показ по клавише, имена, кровь, награда и торговцы, размеры, стопка и все цвета. Изменения применяются сразу. Без MCM работают значения по умолчанию.
+Нужны RE_Kenshi 0.3.3 или новее и KenshiLua последней версии, включённый в лаунчере. Свои имена над персонажами лучше выключить в настройках игры. Хорошо сочетается с [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3821781631]Posh Damage Numbers[/url], ставьте таблички после него. Мод меняет только интерфейс, его можно добавить или убрать в любом сохранении.
+
+[h2]中文[/h2]
+魔兽世界风格的姓名板：屏幕上每个角色头顶都显示名字和血条，就像即时战略游戏一样。
+[list]
+[*]血条显示头部、胸部、腹部中最差的一项，可以看出离昏迷还有多远。
+[*]颜色按态度区分：红色为敌人，橙色为不友好，黄色为中立，绿色为友好，蓝色为自己人。
+[*]浅色拖尾显示刚刚损失的生命，细红条显示血液量。
+[*]角色昏迷时血条变为深红色，显示离死亡还有多远。
+[*]通缉犯头顶显示骷髅和赏金，商人头顶显示金币。
+[*]独特角色（派系领袖、首领、独特招募角色）的名字显示为紫色。
+[*]可选：隐藏昏迷 NPC 的名牌，大规模战斗中名牌留给仍站着的人。
+[*]屏幕上所有人都有姓名板；建筑物里的人不显示，除非掀开屋顶。
+[*]镜头拉远时姓名板会缩小而不是消失，也不会闪烁。人群中姓名板会自动叠放。
+[*]可选：仅在按住按键时显示姓名板（默认 N），或按一次键开关。模式和按键在 Mod Config Menu 中设置。
+[/list]
+安装 [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3813761584]Mod Config Menu[/url] 后可在游戏内调整 35 项设置：显示对象、按键显示、名字、血液条、赏金和商人标记、大小、叠放以及所有颜色，修改立即生效。未安装 MCM 时使用默认值。
+需要 RE_Kenshi 0.3.3 或更新版本，以及在启动器中启用的最新版 KenshiLua。建议在游戏选项中关闭原版角色名字。推荐搭配 [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3821781631]Posh Damage Numbers[/url]，并把本模组放在它之后。本模组只修改界面，可以随时加入或移出存档。

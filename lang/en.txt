@@ -1,0 +1,107 @@
+# Posh Nameplates: texts of the settings page in Mod Config Menu and of the script.
+# One line per text: key = text. Keep the key, translate the text after " = ".
+# A new language: copy en.txt to <code>.txt, where <code> is the first two letters of language= in
+# Kenshi's settings.cfg (zh_CN -> zh.txt). Keys you leave out stay English.
+# Mod Config Menu draws with the game's fonts: avoid the characters — – « » … №.
+
+info = Name and health bar plates over characters, like in WoW.
+
+# --- Who gets a plate
+section.who = Who gets a plate
+Enabled = Nameplates
+Enabled.tip = Turns the mod on and off.
+HotkeyMode = Show by a key
+HotkeyMode.tip = Off: plates follow the settings below. While held: only while you hold the key. Switch: the key turns plates on and off.
+HotkeyMode.off = Off
+HotkeyMode.hold = While held
+HotkeyMode.toggle = Switch
+Hotkey = Key
+Hotkey.tip = N, G, X, Z, U, P and Caps Lock are free in Kenshi. Alt also highlights things in the game.
+Hotkey.N = N
+Hotkey.G = G
+Hotkey.X = X
+Hotkey.Z = Z
+Hotkey.U = U
+Hotkey.P = P
+Hotkey.CapsLock = Caps Lock
+Hotkey.Alt = Alt
+ShowHostile = Enemies
+ShowHostile.always = Always
+ShowHostile.near = Near my people
+ShowHostile.fighting = In a fight
+ShowHostile.never = Never
+ShowUnfriendly = Unfriendly
+ShowUnfriendly.always = Always
+ShowUnfriendly.near = Near my people
+ShowUnfriendly.fighting = In a fight
+ShowUnfriendly.never = Never
+ShowNeutral = Neutral
+ShowNeutral.always = Always
+ShowNeutral.near = Near my people
+ShowNeutral.fighting = In a fight
+ShowNeutral.never = Never
+ShowFriendly = Friendly
+ShowFriendly.always = Always
+ShowFriendly.near = Near my people
+ShowFriendly.fighting = In a fight
+ShowFriendly.never = Never
+ShowSquad = My people
+ShowSquad.always = Always
+ShowSquad.near = Near my people
+ShowSquad.fighting = In a fight
+ShowSquad.never = Never
+HideIndoors = Hide people inside buildings
+HideIndoors.tip = Plates come back when you lift the roof.
+HideDowned = Hide downed NPCs
+HideDowned.tip = Knocked-out NPCs (everyone outside your squad) get no plate, so in big battles the plates go to those still standing. The selected character always keeps one.
+SquadRange = Near my people, m
+SquadRange.tip = Distance for the 'Near my people' choice.
+FightSeconds = Counts as fighting, s
+FightSeconds.tip = After the last hit a character counts as fighting this long.
+KeepSeconds = Keep a plate, s
+KeepSeconds.tip = A plate stays this long after it is no longer needed, so plates do not blink.
+MaxPlates = Plates at once
+MaxPlates.tip = Selected first, then enemies, then the nearest to your people.
+
+# --- Look
+section.look = Look
+ShowNames = Names
+ShowBlood = Blood bar
+ShowBlood.tip = A thin red bar under the health bar when blood is low.
+ShowBounty = Bounty: skull and amount
+ShowTrader = Traders: coins
+ShowUnique = Unique NPCs: own name colour
+ShowUnique.tip = Named characters: faction leaders, bosses, unique recruits.
+FullSizeBodyPx = Full size from, px
+FullSizeBodyPx.tip = Plates are full size while a character is this tall on screen, smaller when the camera is further.
+MinScale = Smallest plate size
+MinScale.tip = Size of plates with a far camera, 1 is full size.
+MinBodyPx = Hide below, px
+MinBodyPx.tip = Characters smaller than this on screen get no plate.
+Stacking = Stack plates in crowds
+Stacking.tip = Plates move up so they do not cover each other.
+StackMaxRise = Stack height
+StackMaxRise.tip = Plates pushed higher than this many plate heights fade out.
+
+# --- Colours
+section.colours = Colours
+ColourHostile = Enemies
+ColourUnfriendly = Unfriendly
+ColourNeutral = Neutral
+ColourFriendly = Friendly
+ColourSquad = My people
+ColourDying = Knocked out (distance to death)
+ColourTrail = Just lost health
+ColourBlood = Blood bar
+ColourUnique = Unique NPC names
+
+# --- Relations
+section.relations = Relations
+UnfriendlyBelow = Unfriendly at or below
+UnfriendlyBelow.tip = Faction relation (-100..100) that counts as unfriendly.
+FriendlyAbove = Friendly at or above
+FriendlyAbove.tip = Faction relation (-100..100) that counts as friendly.
+
+# --- Shown by the script itself
+# Added to the name of a knocked-out character.
+script.ko_suffix = (KO)

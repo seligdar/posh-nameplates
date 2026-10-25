@@ -1,0 +1,107 @@
+# Posh Nameplates: texts of the settings page in Mod Config Menu and of the script.
+# One line per text: key = text. Keep the key, translate the text after " = ".
+# A new language: copy en.txt to <code>.txt, where <code> is the first two letters of language= in
+# Kenshi's settings.cfg (zh_CN -> zh.txt). Keys you leave out stay English.
+# Mod Config Menu draws with the game's fonts: avoid the characters — – « » … №.
+
+info = Таблички с именем и полоской здоровья над персонажами, как в WoW.
+
+# --- Who gets a plate
+section.who = Кому показывать
+Enabled = Таблички
+Enabled.tip = Включает и выключает мод.
+HotkeyMode = Показ по клавише
+HotkeyMode.tip = Нет: как настроено ниже. Пока зажата: только пока держишь клавишу. Переключать: клавиша включает и выключает таблички.
+HotkeyMode.off = Нет
+HotkeyMode.hold = Пока зажата
+HotkeyMode.toggle = Переключать
+Hotkey = Клавиша
+Hotkey.tip = N, G, X, Z, U, P и Caps Lock в Kenshi свободны. Alt в игре ещё и подсвечивает предметы.
+Hotkey.N = N
+Hotkey.G = G
+Hotkey.X = X
+Hotkey.Z = Z
+Hotkey.U = U
+Hotkey.P = P
+Hotkey.CapsLock = Caps Lock
+Hotkey.Alt = Alt
+ShowHostile = Враги
+ShowHostile.always = Всегда
+ShowHostile.near = Рядом с моими
+ShowHostile.fighting = В бою
+ShowHostile.never = Никогда
+ShowUnfriendly = Недружелюбные
+ShowUnfriendly.always = Всегда
+ShowUnfriendly.near = Рядом с моими
+ShowUnfriendly.fighting = В бою
+ShowUnfriendly.never = Никогда
+ShowNeutral = Нейтральные
+ShowNeutral.always = Всегда
+ShowNeutral.near = Рядом с моими
+ShowNeutral.fighting = В бою
+ShowNeutral.never = Никогда
+ShowFriendly = Дружественные
+ShowFriendly.always = Всегда
+ShowFriendly.near = Рядом с моими
+ShowFriendly.fighting = В бою
+ShowFriendly.never = Никогда
+ShowSquad = Мои люди
+ShowSquad.always = Всегда
+ShowSquad.near = Рядом с моими
+ShowSquad.fighting = В бою
+ShowSquad.never = Никогда
+HideIndoors = Прятать тех, кто в зданиях
+HideIndoors.tip = Таблички появятся, если снять крышу.
+HideDowned = Прятать лежачих NPC
+HideDowned.tip = NPC без сознания (все не из твоего отряда) остаются без таблички, и в больших боях таблички достаются тем, кто ещё стоит. У выбранного персонажа табличка есть всегда.
+SquadRange = Рядом с моими, м
+SquadRange.tip = Расстояние для варианта 'Рядом с моими'.
+FightSeconds = Считать в бою, с
+FightSeconds.tip = Столько секунд после удара персонаж считается в бою.
+KeepSeconds = Держать табличку, с
+KeepSeconds.tip = Столько табличка держится после того, как стала не нужна. Так таблички не мигают.
+MaxPlates = Табличек сразу
+MaxPlates.tip = Сначала выбранный, потом враги, потом ближние к твоим людям.
+
+# --- Look
+section.look = Вид
+ShowNames = Имена
+ShowBlood = Полоска крови
+ShowBlood.tip = Тонкая красная полоска под здоровьем, когда мало крови.
+ShowBounty = Награда: череп и сумма
+ShowTrader = Торговцы: монеты
+ShowUnique = Уникальные NPC: свой цвет имени
+ShowUnique.tip = Именные персонажи: лидеры фракций, боссы, уникальные наёмники.
+FullSizeBodyPx = Полный размер от, пикс.
+FullSizeBodyPx.tip = Пока персонаж на экране не ниже этого, табличка полного размера. Дальше она уменьшается.
+MinScale = Наименьший размер таблички
+MinScale.tip = Размер табличек при далёкой камере, 1 - полный.
+MinBodyPx = Прятать меньше, пикс.
+MinBodyPx.tip = Персонажи мельче этого на экране остаются без таблички.
+Stacking = Стопка табличек в толпе
+Stacking.tip = Таблички раздвигаются вверх и не закрывают друг друга.
+StackMaxRise = Высота стопки
+StackMaxRise.tip = Таблички выше стольких этажей прячутся.
+
+# --- Colours
+section.colours = Цвета
+ColourHostile = Враги
+ColourUnfriendly = Недружелюбные
+ColourNeutral = Нейтральные
+ColourFriendly = Дружественные
+ColourSquad = Мои люди
+ColourDying = Без сознания (сколько до смерти)
+ColourTrail = Только что потерянное
+ColourBlood = Полоска крови
+ColourUnique = Имена уникальных NPC
+
+# --- Relations
+section.relations = Отношения
+UnfriendlyBelow = Недружелюбные от
+UnfriendlyBelow.tip = Отношение фракции (-100..100), ниже которого она недружелюбна.
+FriendlyAbove = Дружественные от
+FriendlyAbove.tip = Отношение фракции (-100..100), выше которого она дружественна.
+
+# --- Shown by the script itself
+# Added to the name of a knocked-out character.
+script.ko_suffix = (без сознания)
