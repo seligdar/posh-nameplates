@@ -72,3 +72,7 @@ Script and interface only: no game data is changed. Safe to add to or remove fro
 [/list]
 安装 [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3813761584]Mod Config Menu[/url] 后可在游戏内调整 35 项设置：显示对象、按键显示、名字、血液条、赏金和商人标记、大小、叠放以及所有颜色，修改立即生效。未安装 MCM 时使用默认值。
 需要 RE_Kenshi 0.3.3 或更新版本，以及在启动器中启用的最新版 KenshiLua。建议在游戏选项中关闭原版角色名字。推荐搭配 [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3821781631]Posh Damage Numbers[/url]，并把本模组放在它之后。本模组只修改界面，可以随时加入或移出存档。
+
+Simplified Chinese translation: 夕妄 ([url=https://github.com/zXiWang]zXiWang[/url]).
+Перевод на китайский: 夕妄.
+简体中文翻译：夕妄。

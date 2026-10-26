@@ -48,6 +48,7 @@ M.items = {
 M.texts = {
     en = { ko_suffix = "(KO)" },
     ru = { ko_suffix = "(без сознания)" },
+    zh = { ko_suffix = "（昏迷）" },
 }
 
 -- settings.cfg in the game folder holds language=zh_CN; the first two letters pick the texts, English otherwise

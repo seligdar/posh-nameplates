@@ -633,8 +633,8 @@ def only_frame_event() -> None:
 
 
 def ko_language() -> None:
-    """The knocked-out mark follows the game language from settings.cfg; a language with a lang file of its own
-    (here a made-up zh.txt) gets its text, a language without one gets English."""
+    """The knocked-out mark follows the game language from settings.cfg: every shipped lang file gives its own
+    text, a language without a file gets English, and a new lang file (here a made-up xx.txt) works the same way."""
     import os
     import tempfile
     sys.path.insert(0, str(HERE.parent / "mcm"))
@@ -642,13 +642,16 @@ def ko_language() -> None:
     from spec import MOD
     keys, langs = gen_mcm.load_langs(MOD)
     english = langs[0].texts
-    zh = gen_mcm.Lang("zh", {k: english[k] for k in keys} | {"script.ko_suffix": "(昏迷)"})
-    with_zh = Path(tempfile.mkdtemp())
-    (with_zh / "np_settings.lua").write_text(gen_mcm.lua_for(MOD, langs + [zh]), encoding="utf-8")
+    made_up = gen_mcm.Lang("xx", {k: english[k] for k in keys} | {"script.ko_suffix": "(KO-xx)"})
+    with_xx = Path(tempfile.mkdtemp())
+    (with_xx / "np_settings.lua").write_text(gen_mcm.lua_for(MOD, langs + [made_up]), encoding="utf-8")
 
-    cases = [("language=ru_RU", None, "Bandit (без сознания)"), ("language=en_GB", None, "Bandit (KO)"),
-             ("language=de_DE", None, "Bandit (KO)"), ("language=zh_CN", None, "Bandit (KO)"),
-             ("language=zh_CN", with_zh, "Bandit (昏迷)"), (None, None, "Bandit (KO)")]
+    cases = [(f"language={l.code}_XX", None, "Bandit " + l.texts["script.ko_suffix"]) for l in langs]
+    cases += [("language=de_DE", None, "Bandit " + english["script.ko_suffix"]),
+              ("language=xx_YY", None, "Bandit " + english["script.ko_suffix"]),
+              ("language=xx_YY", with_xx, "Bandit (KO-xx)"),
+              (None, None, "Bandit " + english["script.ko_suffix"])]
+    assert {"en", "ru"} <= {l.code for l in langs}
     here = os.getcwd()
     try:
         for cfg, modules, want in cases:
@@ -667,7 +670,7 @@ def ko_language() -> None:
             assert got == want, (cfg, modules, got)
     finally:
         os.chdir(here)
-    print("knocked-out mark: ru, en, unknown language -> English, zh with its own lang file, no settings.cfg: ok")
+    print(f"knocked-out mark: {', '.join(l.code for l in langs)}, unknown language -> English, a new lang file, no settings.cfg: ok")
 
 
 if __name__ == "__main__":
