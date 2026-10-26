@@ -279,7 +279,7 @@ def main(mode: str) -> None:
     ''')
     g.run(1.0)
     assert g.plate("q1") == {}, "idle neutral in fighting mode"
-    g.x('HANDLERS["Character::_NV_hitByMeleeAttack"](Q)')   # a fight = a hit (the game's combat-mode call is unsafe)
+    g.x("Q.medical.anatomy[2].flesh = 70")          # a fight = a wound, read in the frame loop
     g.run(1.0)
     assert g.plate("q1"), "fighting neutral has no plate"
     g.run(1.0)
@@ -558,6 +558,16 @@ def hotkey() -> None:
     print("hotkey: off / while held / switch, focus needed: ok")
 
 
+def only_frame_event() -> None:
+    """KenshiLua runs event handlers on the thread that fires them, and the game fires hits, knockouts and deaths
+    on its worker threads: any handler but the frame one would run Lua on two threads at once (lua51.dll crash)."""
+    g = Game("exact")
+    g.load()
+    events = sorted(g.e("(function() local t = {} for k in pairs(HANDLERS) do t[#t + 1] = k end return t end)()").values())
+    assert events == ["MyGUI::Gui::eventFrameStart"], events
+    print("only the frame event is subscribed: ok")
+
+
 def ko_language() -> None:
     """The knocked-out mark follows the game language from settings.cfg; a language with a lang file of its own
     (here a made-up zh.txt) gets its text, a language without one gets English."""
@@ -601,6 +611,7 @@ if __name__ == "__main__":
         main(m)
         crowd(m)
     hotkey()
+    only_frame_event()
     ko_language()
     unique_and_old_lua()
     blunt_stun()

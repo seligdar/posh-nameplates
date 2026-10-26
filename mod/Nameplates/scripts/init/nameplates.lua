@@ -702,7 +702,6 @@ end
 -- ===================================================================================
 local plates = {}        -- key -> plate
 local clock = 0
-local hitAt = {}         -- key -> time of the last melee hit (event)
 
 local function newPlate(c, key)
     local ref = handleRef(c)
@@ -716,6 +715,12 @@ local function newPlate(c, key)
     }
 end
 
+-- a wound since the last reading: less health, less blood, or knocked out
+local function hurtSince(old, ko, death, unconscious, blood)
+    return ko < old.ko - 1e-3 or death < old.death - 1e-3 or (blood and old.blood and blood < old.blood - 0.01)
+        or (unconscious and not old.unconscious)
+end
+
 -- reads health into the plate and notes wounds; returns false when the character is dead
 local function refreshHealth(p, c)
     local ok, ko, death, unconscious, dead, blood = pcall(readHealth, c)
@@ -723,7 +728,7 @@ local function refreshHealth(p, c)
     if dead then return false end
     local okD, isDead = pcall(function() return c:isDead() end)
     if okD and isDead then return false end
-    if ko < p.ko - 1e-3 or death < p.death - 1e-3 or (blood and p.blood and blood < p.blood - 0.01) or (unconscious and not p.unconscious) then
+    if hurtSince(p, ko, death, unconscious, blood) then
         p.lastHurt = clock
     end
     p.ko, p.death, p.unconscious, p.blood = ko, death, unconscious, blood
@@ -776,11 +781,27 @@ local function hiddenIndoors(c, pi)
     return true
 end
 
--- fighting = hit or hurt recently. Character::isInCombatMode is not asked: it reads the melee and ranged
--- combat objects without null checks and would crash the game on a character missing one.
+-- Health of characters in "fighting" mode that have no plate yet, so that a wound gives them one. The first
+-- reading is only a baseline: an old wound is not a fight.
+local hurtSeen = {}      -- key -> { ko, death, unconscious, blood, lastHurt, seen }
+local function hurtLately(c, key)
+    local ok, ko, death, unconscious, dead, blood = pcall(readHealth, c)
+    if not ok or dead then return false end
+    local h = hurtSeen[key]
+    if h == nil then
+        hurtSeen[key] = { ko = ko, death = death, unconscious = unconscious, blood = blood, lastHurt = -1e9, seen = clock }
+        return false
+    end
+    if hurtSince(h, ko, death, unconscious, blood) then h.lastHurt = clock end
+    h.ko, h.death, h.unconscious, h.blood, h.seen = ko, death, unconscious, blood, clock
+    return clock - h.lastHurt < CONFIG.fightSeconds
+end
+
+-- fighting = hurt recently. Character::isInCombatMode is not asked: it reads the melee and ranged combat
+-- objects without null checks and would crash the game on a character missing one.
 local function fighting(c, key, p)
-    if hitAt[key] and clock - hitAt[key] < CONFIG.fightSeconds then return true end
-    return p ~= nil and clock - p.lastHurt < CONFIG.fightSeconds
+    if p ~= nil then return clock - p.lastHurt < CONFIG.fightSeconds end
+    return hurtLately(c, key)
 end
 
 -- choose who gets a plate: on screen, alive, needed by the settings (or still kept), most important first
@@ -839,6 +860,9 @@ local function rescan()
                 end
             end
         end
+    end
+    for key, h in pairs(hurtSeen) do
+        if clock - h.seen > CONFIG.fightSeconds + 5 then hurtSeen[key] = nil end
     end
     table.sort(scanList, function(a, b)
         if a.selected ~= b.selected then return a.selected end
@@ -1191,15 +1215,9 @@ local function safeOn(event, fn)
     if not ok then warnOnce("event " .. event, "could not subscribe to " .. event .. ": " .. tostring(err)) end
 end
 
--- both sides of a melee hit are fighting: the one hit and the one who swung
-safeOn("Character::_NV_hitByMeleeAttack", function(self, cutDir, damage, attacker)
-    local key = keyOf(self)
-    if key then hitAt[key] = clock end
-    if attacker ~= nil then
-        local okA, ak = pcall(keyOf, attacker)
-        if okA and ak then hitAt[ak] = clock end
-    end
-end)
+-- Only the frame event is used. The game resolves hits, knockouts and deaths on its worker threads while the
+-- main thread draws, and KenshiLua runs event handlers on whatever thread fires them: Lua then runs on two
+-- threads at once and crashes inside lua51.dll in big fights. Who is hurt is read in the frame loop instead.
 
 local scanTimer, sizeTimer = 0, 0
 local keyWasDown, keyToggled, hiddenByKey = false, false, false
@@ -1264,9 +1282,6 @@ local function frame(time)
     if scanTimer <= 0 then
         rescan()
         scanTimer = CONFIG.scanInterval
-        for key, t in pairs(hitAt) do
-            if clock - t > CONFIG.fightSeconds then hitAt[key] = nil end
-        end
     end
     animateAll(dt)
 end
