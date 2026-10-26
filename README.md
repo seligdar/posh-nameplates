@@ -32,6 +32,9 @@ Mod Config Menu draws with the game's fonts, so the characters — – « » …
 - `mcm/spec.py` lists the settings (ini keys, defaults, limits); `mcm/gen_mcm.py` turns it and `lang/*.txt` into
   the Mod Config Menu plugin source and the Lua settings module.
 - `tools/make_np_atlas.py` draws `gui/gfx/Nameplates_atlas.png`.
+- `tools/make_hire_list.py` reads the base game data and writes `scripts/np_hire.lua`: the character templates you
+  can hire for money (crossed swords on the plate). The script cannot read conversations in the game safely, so the
+  list is made here: `python tools/make_hire_list.py <Kenshi folder> mod/Nameplates/scripts/np_hire.lua`.
 - `tests/` runs the script in LuaJIT against a fake game and loads the real plugin DLL in a fake Mod Config Menu.
 - `workshop/` holds the Workshop description and preview.
 
@@ -49,3 +52,4 @@ Tests need Python 3 with `lupa` and `Pillow`:
     python test_mcm_dll.py
     python test_e2e.py
     python test_sweep.py
+    python test_hire_list.py <Kenshi folder>

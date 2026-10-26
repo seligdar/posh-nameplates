@@ -48,7 +48,8 @@ function newChar(id, x, z, opts)
     function med:getMaxBlood() return self.noBlood and 0 or 100 end
     local c = setmetatable({ id = id, alive = true, x = x, y = 0, z = z, player = opts.player, enemy = opts.enemy,
         faction = opts.faction, robot = opts.robot, height = opts.height or 17, lying = false, medical = med,
-        name = opts.name or ("Char" .. id), appearanceHeight = opts.appearanceHeight or 1.8, unique = opts.unique }, Char)
+        name = opts.name or ("Char" .. id), appearanceHeight = opts.appearanceHeight or 1.8, unique = opts.unique,
+        data = opts.template and { stringID = opts.template, name = opts.templateName or opts.template } or nil }, Char)
     c.handle = Hand.new(c)
     c.animation = ffiMock.cast("void*", opts.noAnimation and 0 or 1)
     -- Character.platoon -> ActivePlatoon.me (Platoon) -> squadTemplate; opts.squad = false / "no platoon" /

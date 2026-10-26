@@ -267,7 +267,7 @@ def main(mode: str) -> None:
         counts.append(g.e("#WIDGETS"))
         prev = tag
     assert counts[-1] == counts[-2] == counts[-3], ("widget pool keeps growing", counts)
-    assert counts[-1] <= 2 * 40 * 10, counts      # 10 widgets per plate
+    assert counts[-1] <= 2 * 40 * 11, counts      # 11 widgets per plate
     print("11 plate cap and widget pool: ok", drawn, "plates, widgets per cycle", counts)
 
     # 13 other modes from the settings: "fighting" hides idle people, shows them in a fight, keeps them a while
@@ -558,6 +558,70 @@ def hotkey() -> None:
     print("hotkey: off / while held / switch, focus needed: ok")
 
 
+def for_hire() -> None:
+    """Crossed swords for people the base game lets you hire for money (template in np_hire), not for others,
+    not for your own people; the setting switches them off; an old KenshiLua without the module shows none."""
+    hire_ids = [l.split('"')[1] for l in (HERE.parent / "mod" / "Nameplates" / "scripts" / "np_hire.lua")
+                .read_text(encoding="utf-8").splitlines() if l.strip().startswith('["')]
+    assert len(hire_ids) > 50, len(hire_ids)
+    doc = "1354-gamedata.base"
+    assert doc in hire_ids, "Doc, the base game's hired medic, is in the list"
+    setup = f'''
+        T = newFaction("Traders", 10, false)
+        H = newChar("h1", -12, 0, {{ faction = T, name = "Mercenary", template = "{doc}", templateName = "Doc" }})
+        N = newChar("n1", 0, 0, {{ faction = T, name = "Townsman", template = "9999-gamedata.base" }})
+        P = newChar("p1", 12, 0, {{ player = true, faction = PLAYER_FACTION, name = "Leader", template = "{doc}" }})
+    '''
+    g = Game("exact")
+    g.x(setup)
+    g.load()
+    g.run(1.0)
+    h, n, me = g.plate("h1"), g.plate("n1"), g.plate("p1")
+    assert "hicon" in h, ("swords expected", sorted(h))
+    assert h["hicon"]["uv"] == (64, 48, 32, 32), h["hicon"]["uv"]
+    assert h["hicon"]["x"] + h["hicon"]["w"] <= h["name"]["x"] + 4, "swords come before the name"
+    assert "hicon" not in n, "not for hire: no swords"
+    assert "hicon" not in me, "your own people: no swords"
+    assert any("first character for hire on screen: template Doc" in s for s in g.logs()), g.logs()
+    g.x("Nameplates.settings().showForHire = false")
+    g.run(1.0)
+    assert "hicon" not in g.plate("h1"), "switched off"
+
+    old = Game("exact", modules_found=False)
+    old.x(setup)
+    old.load()
+    old.run(1.0)
+    assert old.plate("h1").get("frame") and "hicon" not in old.plate("h1"), "no module: plates without swords"
+    assert any("np_hire not found" in s for s in old.logs()), old.logs()
+    print(f"for hire: swords for the {len(hire_ids)} base-game hirelings, none for others or your people, setting, old KenshiLua: ok")
+
+
+def saved_drifters() -> None:
+    """Drifter squads from a real save (Kenshi quicksave, 2026-10-19): the characters' templates as the game keeps
+    them. Character.data is the template (Character::isUnique reads its "unique" flag through the same field), so
+    its stringID is what the list holds. Hirelings get swords, the other drifters do not."""
+    cases = [("Ash", "1370-gamedata.base", True),        # Sword for hire
+             ("Birch", "1737-gamedata.base", True),      # Sword for hire 10
+             ("Cedar", "1777-gamedata.base", True),      # hire engineer
+             ("Dune", "511-gamedata.base", False),       # Sand Ninja
+             ("Ember", "510-gamedata.base", False),      # Dust Bandit
+             ("Flint", "18896-rebirth.mod", False)]      # Flotsam Ninja
+    g = Game("exact")
+    g.x('D = newFaction("Drifters", 0, false)')
+    for i, (name, template, _) in enumerate(cases):
+        g.x(f'newChar("d{i}", {-25 + i * 10}, 0, {{ faction = D, name = "{name}", template = "{template}" }})')
+    g.x('newChar("x0", 0, 12, { faction = D, name = "Gale" })')     # no template data at all
+    g.load()
+    g.run(1.5)
+    for i, (name, template, hire) in enumerate(cases):
+        plate = g.plate(f"d{i}")
+        assert plate.get("frame"), (name, "no plate")
+        assert ("hicon" in plate) == hire, (name, template, sorted(plate))
+    assert "hicon" not in g.plate("x0"), "no data: no swords"
+    assert not [s for s in g.logs() if "error" in s.lower() or "failed" in s.lower()], g.logs()
+    print("saved drifters: swords for Sword for hire, Sword for hire 10, hire engineer; none for the other drifters: ok")
+
+
 def only_frame_event() -> None:
     """KenshiLua runs event handlers on the thread that fires them, and the game fires hits, knockouts and deaths
     on its worker threads: any handler but the frame one would run Lua on two threads at once (lua51.dll crash)."""
@@ -612,6 +676,8 @@ if __name__ == "__main__":
         crowd(m)
     hotkey()
     only_frame_event()
+    for_hire()
+    saved_drifters()
     ko_language()
     unique_and_old_lua()
     blunt_stun()

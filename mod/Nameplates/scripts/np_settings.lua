@@ -24,6 +24,7 @@ M.items = {
         { key = "ShowBlood", kind = "bool", root = "CONFIG", path = { "showBlood" }, default = true },
         { key = "ShowBounty", kind = "bool", root = "CONFIG", path = { "showBounty" }, default = true },
         { key = "ShowTrader", kind = "bool", root = "CONFIG", path = { "showTrader" }, default = true },
+        { key = "ShowForHire", kind = "bool", root = "CONFIG", path = { "showForHire" }, default = true },
         { key = "ShowUnique", kind = "bool", root = "CONFIG", path = { "showUnique" }, default = true },
         { key = "FullSizeBodyPx", kind = "int", root = "CONFIG", path = { "fullSizeBodyPx" }, default = 70, lo = 20, hi = 200 },
         { key = "MinScale", kind = "float", root = "CONFIG", path = { "minScale" }, default = 0.55, lo = 0.3, hi = 1.0 },

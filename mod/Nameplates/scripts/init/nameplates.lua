@@ -53,6 +53,8 @@ local SETTINGS = requireLocal("np_settings") or {
     pluginLoaded = function() return false end,
     text = function(name) return ({ ko_suffix = "(KO)" })[name] end,
 }
+-- templates the player can hire for money in the base game (tools/make_hire_list.py); without it, no swords
+local HIRE_TEMPLATES = requireLocal("np_hire")
 
 -- ===================================================================================
 -- SETTINGS
@@ -83,6 +85,7 @@ local CONFIG = {
     showBlood = true,            -- thin blood bar under the health bar when blood is below full
     showBounty = true,           -- skull and the bounty amount next to the name of wanted characters
     showTrader = true,           -- coins next to the name of traders
+    showForHire = true,          -- crossed swords next to the name of people you can hire for money
     showUnique = true,           -- unique characters' names in MARKS.unique
     unfriendlyBelow = -25,       -- faction relation at or below this is "unfriendly" (orange)
     friendlyAbove = 50,          -- faction relation at or above this is "friendly" (green)
@@ -142,6 +145,7 @@ local REG = {
     spark = { x = 112, y = 16, w = 8, h = 9 },
     bounty = { x = 0, y = 48, w = 32, h = 32 },
     trader = { x = 32, y = 48, w = 32, h = 32 },
+    hire = { x = 64, y = 48, w = 32, h = 32 },
 }
 
 -- ===================================================================================
@@ -570,6 +574,22 @@ local function isTrader(c)
     return c:isATrader() == true
 end
 
+-- Someone you can hire for money: the character's template (its own data, read as a plain field) is in the list
+-- made from the base game. The game's conversations are not read here: its lookups for them add map entries that
+-- its worker thread uses at the same time.
+local hireLogged = false
+local function isForHire(c)
+    if HIRE_TEMPLATES == nil then return false end
+    local data = c.data
+    if data == nil then return false end
+    local hire = HIRE_TEMPLATES[data.stringID] == true
+    if hire and not hireLogged then
+        hireLogged = true
+        log(TAG .. "first character for hire on screen: template " .. tostring(data.name))
+    end
+    return hire
+end
+
 local function reactionOf(c, pi, pf)
     local okP, isP = pcall(function() return c:isPlayerCharacter() end)
     if okP and isP then return "squad" end
@@ -649,6 +669,7 @@ local function newGroup()
         bfill = newImage(REG.bfill, id .. "bfill"),
         bicon = newImage(REG.bounty, id .. "bicon"),
         ticon = newImage(REG.trader, id .. "ticon"),
+        hicon = newImage(REG.hire, id .. "hicon"),
         colourKeys = {},
     }
     g.name = newText(id .. "name")
@@ -668,7 +689,7 @@ local function takeGroup()
     return nil
 end
 
-local GROUP_PARTS = { "frame", "trail", "fill", "spark", "bframe", "bfill", "bicon", "ticon", "name", "amount" }
+local GROUP_PARTS = { "frame", "trail", "fill", "spark", "bframe", "bfill", "bicon", "ticon", "hicon", "name", "amount" }
 local function hideGroup(g)
     for _, k in ipairs(GROUP_PARTS) do
         local w = g[k]
@@ -899,6 +920,12 @@ local function rescan()
                 local okT, t = pcall(isTrader, e.c)
                 p.trader = okT and t == true
             end
+            if CONFIG.showForHire and e.reaction ~= "squad" then
+                local okH, h = pcall(isForHire, e.c)
+                p.forHire = okH and h == true
+            else
+                p.forHire = false
+            end
             if CONFIG.showUnique then
                 -- Character::isUnique reads the "unique" flag of the character's own data (always present)
                 local okU, u = pcall(function() return e.c:isUnique() end)
@@ -1125,6 +1152,7 @@ local function drawPlate(p)
         g.amount:setVisible(false)
         g.bicon:setVisible(false)
         g.ticon:setVisible(false)
+        g.hicon:setVisible(false)
         p.textW = nil
     else
         local caption = (p.name or "") .. (p.unconscious and KO_SUFFIX or "")
@@ -1152,7 +1180,7 @@ local function drawPlate(p)
         local nc = p.unconscious and KO_NAME or (unique and MARKS.unique) or col.name
         setTint(g, "name", nc[1], nc[2], nc[3])
 
-        -- one centred line: [skull] [coins] name amount
+        -- one centred line: [skull] [coins] [swords] name amount
         local fpx = FONTS[g.fontLevel].px
         local th = fpx + 3
         local nameY = frameY - th + 1
@@ -1160,6 +1188,11 @@ local function drawPlate(p)
         local icons = {}
         if CONFIG.showBounty and p.bounty and p.bounty > 0 then icons[#icons + 1] = g.bicon else g.bicon:setVisible(false) end
         if CONFIG.showTrader and p.trader then icons[#icons + 1] = g.ticon else g.ticon:setVisible(false) end
+        if CONFIG.showForHire and p.forHire and p.reaction ~= "squad" then
+            icons[#icons + 1] = g.hicon
+        else
+            g.hicon:setVisible(false)
+        end
         local nameW = g.textW or #caption * fpx * 0.5
         local amountW = amountText and (g.amountW or #amountText * fpx * 0.5) or 0
         local total = #icons * (iconPx + gap) + nameW + (amountText and 2 * gap + amountW or 0)

@@ -65,6 +65,7 @@ MOD = Mod(
             Item('ShowBlood', 'bool', 'CONFIG', ('showBlood',), True),
             Item('ShowBounty', 'bool', 'CONFIG', ('showBounty',), True),
             Item('ShowTrader', 'bool', 'CONFIG', ('showTrader',), True),
+            Item('ShowForHire', 'bool', 'CONFIG', ('showForHire',), True),
             Item('ShowUnique', 'bool', 'CONFIG', ('showUnique',), True),
             Item('FullSizeBodyPx', 'int', 'CONFIG', ('fullSizeBodyPx',), 70, lo=20, hi=200),
             Item('MinScale', 'float', 'CONFIG', ('minScale',), 0.55, lo=0.3, hi=1.0),
