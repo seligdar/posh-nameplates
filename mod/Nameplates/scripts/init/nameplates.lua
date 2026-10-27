@@ -66,8 +66,9 @@ local CONFIG = {
     hotkey = "N",                -- one of HOTKEYS
     -- who gets a plate (the character you selected always gets one):
     --   "always"   whenever the character is on screen;
-    --   "near"     within squadRange of any of your characters, or fighting;
-    --   "fighting" hitting, hit or wounded in the last fightSeconds, or knocked out by it;
+    --   "near"     within squadRange of any of your characters, or fighting your people at any distance;
+    --   "fighting" hit or wounded in the last fightSeconds within squadRange of your people, or knocked out by
+    --              it, or fighting your people at any distance;
     --   "never"
     show = {
         hostile = "always",
@@ -78,7 +79,7 @@ local CONFIG = {
     },
     hideIndoors = true,          -- no plates for characters inside a building, unless its roof is lifted
     hideDowned = false,          -- no plates for knocked-out NPCs, everyone outside your squad (unless selected)
-    squadRange = 60,             -- metres from the nearest of your characters for "near"
+    squadRange = 60,             -- metres from the nearest of your characters for "near" and for others' fights
     fightSeconds = 10,           -- after the last hit or wound a character counts as fighting this long
     keepSeconds = 3,             -- a plate stays at least this long after it stops being needed
     showNames = true,
@@ -736,10 +737,10 @@ local function newPlate(c, key)
     }
 end
 
--- a wound since the last reading: less health, less blood, or knocked out
-local function hurtSince(old, ko, death, unconscious, blood)
-    return ko < old.ko - 1e-3 or death < old.death - 1e-3 or (blood and old.blood and blood < old.blood - 0.01)
-        or (unconscious and not old.unconscious)
+-- a wound since the last reading: less health, or knocked out. Blood is left out: bleeding goes on long after
+-- the fight, and a stranger bleeding out far away would count as fighting until death.
+local function hurtSince(old, ko, death, unconscious)
+    return ko < old.ko - 1e-3 or death < old.death - 1e-3 or (unconscious and not old.unconscious)
 end
 
 -- reads health into the plate and notes wounds; returns false when the character is dead
@@ -749,7 +750,7 @@ local function refreshHealth(p, c)
     if dead then return false end
     local okD, isDead = pcall(function() return c:isDead() end)
     if okD and isDead then return false end
-    if hurtSince(p, ko, death, unconscious, blood) then
+    if hurtSince(p, ko, death, unconscious) then
         p.lastHurt = clock
     end
     p.ko, p.death, p.unconscious, p.blood = ko, death, unconscious, blood
@@ -804,17 +805,17 @@ end
 
 -- Health of characters in "fighting" mode that have no plate yet, so that a wound gives them one. The first
 -- reading is only a baseline: an old wound is not a fight.
-local hurtSeen = {}      -- key -> { ko, death, unconscious, blood, lastHurt, seen }
+local hurtSeen = {}      -- key -> { ko, death, unconscious, lastHurt, seen }
 local function hurtLately(c, key)
-    local ok, ko, death, unconscious, dead, blood = pcall(readHealth, c)
+    local ok, ko, death, unconscious, dead = pcall(readHealth, c)
     if not ok or dead then return false end
     local h = hurtSeen[key]
     if h == nil then
-        hurtSeen[key] = { ko = ko, death = death, unconscious = unconscious, blood = blood, lastHurt = -1e9, seen = clock }
+        hurtSeen[key] = { ko = ko, death = death, unconscious = unconscious, lastHurt = -1e9, seen = clock }
         return false
     end
-    if hurtSince(h, ko, death, unconscious, blood) then h.lastHurt = clock end
-    h.ko, h.death, h.unconscious, h.blood, h.seen = ko, death, unconscious, blood, clock
+    if hurtSince(h, ko, death, unconscious) then h.lastHurt = clock end
+    h.ko, h.death, h.unconscious, h.seen = ko, death, unconscious, clock
     return clock - h.lastHurt < CONFIG.fightSeconds
 end
 
@@ -823,6 +824,25 @@ end
 local function fighting(c, key, p)
     if p ~= nil then return clock - p.lastHurt < CONFIG.fightSeconds end
     return hurtLately(c, key)
+end
+
+-- Fighting your people: the game's own mark Character::_isEngagedWithAPlayer, a plain field. The combat AI sets
+-- it on every update while the character's target belongs to the player's faction, the periodic update clears
+-- it, so one reading can fall between the two: a mark counts for fightSeconds.
+local engagedSeen = {}   -- key -> clock of the last reading with the mark
+local engagedLogged = false
+local function engagedWithYou(c, key)
+    local ok, e = pcall(function() return c._isEngagedWithAPlayer end)
+    if not ok then warnOnce("engaged", "the 'fighting your people' mark is unreadable: " .. tostring(e)) end
+    if ok and e == true then
+        engagedSeen[key] = clock
+        if not engagedLogged then
+            engagedLogged = true
+            log(TAG .. "the game marks characters fighting your people; first: " .. key)
+        end
+    end
+    local t = engagedSeen[key]
+    return t ~= nil and clock - t < CONFIG.fightSeconds
 end
 
 -- choose who gets a plate: on screen, alive, needed by the settings (or still kept), most important first
@@ -873,7 +893,9 @@ local function rescan()
                 if not want and (mode == "near" or mode == "fighting") then
                     -- a plate already shown leaves the range a bit later than a new one enters it
                     local range = (p and p.wanted) and CONFIG.squadRange * 1.15 or CONFIG.squadRange
-                    want = (mode == "near" and dist <= range) or fighting(c, key, p)
+                    -- someone fighting your people counts at any distance, other fights only within the range
+                    want = engagedWithYou(c, key)
+                        or (dist <= range and (mode == "near" or fighting(c, key, p)))
                 end
                 if want or (p and p.keepUntil > clock) then
                     scanList[#scanList + 1] = { c = c, key = key, pos = pos, reaction = reaction, dist = dist,
@@ -884,6 +906,9 @@ local function rescan()
     end
     for key, h in pairs(hurtSeen) do
         if clock - h.seen > CONFIG.fightSeconds + 5 then hurtSeen[key] = nil end
+    end
+    for key, t in pairs(engagedSeen) do
+        if clock - t > CONFIG.fightSeconds + 5 then engagedSeen[key] = nil end
     end
     table.sort(scanList, function(a, b)
         if a.selected ~= b.selected then return a.selected end

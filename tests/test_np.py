@@ -306,8 +306,36 @@ def main(mode: str) -> None:
         fr = g.plate("r1").get("frame")
         low = min(low, fr["alpha"] if fr else 0)
     assert low > 0.8, ("plate blinked at the range edge", low)
+    # someone else's fight beyond the range gets no plate; someone fighting your people gets one at any distance
+    g.x("R.z = 4 - 1000")
+    g.run(5.0)
+    assert g.plate("r1") == {}, "far hostile shown in near mode"
+    g.x("R.medical.anatomy[2].flesh = 50")
+    g.run(1.0)
+    assert g.plate("r1") == {}, "a fight far from your people gave a plate in near mode"
+    g.x("R._isEngagedWithAPlayer = true")
+    g.run(1.0)
+    assert g.plate("r1"), "hostile fighting your people 100 m away has no plate"
+    g.x("R._isEngagedWithAPlayer = false")
+    g.run(1.0)
+    assert g.plate("r1"), "the mark is cleared between the game's updates: the plate must not blink"
+    g.run(14.0)                                     # fightSeconds 10 after the mark + keepSeconds 3
+    assert g.plate("r1") == {}, "plate stayed after the fight with your people"
+    # "fighting": a wound far away gives nothing, bleeding near your people gives nothing, a wound near them does
+    g.x("Nameplates.show('hostile', 'fighting')")
+    g.x("R.medical.anatomy[2].flesh = 30")
+    g.run(1.0)
+    assert g.plate("r1") == {}, "a fight far from your people gave a plate in fighting mode"
+    g.x("R.z = 4 - 300")
+    g.run(1.0)
+    g.x("R.medical.blood = 40")
+    g.run(1.0)
+    assert g.plate("r1") == {}, "bleeding counted as fighting"
+    g.x("R.medical.anatomy[2].flesh = 20")
+    g.run(1.0)
+    assert g.plate("r1"), "hostile wounded 30 m from your people has no plate in fighting mode"
     g.x("Nameplates.show('hostile', 'always')")
-    print("13 fighting / selected / near modes, no blinking at the edge: ok")
+    print("13 fighting / selected / near modes, no blinking at the edge, far fights, fights with your people: ok")
 
     # 14 bounty: skull left of the name, gold amount right of it; trader: coins; both: skull then coins
     g.x("for _, c in ipairs(CHARS) do c.alive = false end")
