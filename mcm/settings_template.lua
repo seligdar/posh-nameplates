@@ -38,6 +38,7 @@ end
 local DLL = "@DLL@"
 local INI = "@INI@"
 local FOLDER = "@FOLDER@"
+local WORKSHOP_ID = "@WORKSHOP@"
 
 local ffi = nil
 do
@@ -66,13 +67,27 @@ local function bindPlugin()
     return ok
 end
 
--- the ini lives next to the plugin; without the plugin, in the local mod folder
+-- The ini lives next to the plugin. KenshiLua runs this script as soon as it is loaded itself, so a plugin
+-- further down the load order is not loaded yet: the ini is then looked for where the plugin will be, in the
+-- local mod folder or in this mod's Workshop folder (the game runs from the Kenshi folder).
+local function folderIni()
+    local tries = { "mods/" .. FOLDER .. "/" .. INI, "../../workshop/content/233860/" .. WORKSHOP_ID .. "/" .. INI }
+    for _, p in ipairs(tries) do
+        local f = io.open(p, "r")
+        if f then
+            f:close()
+            return p
+        end
+    end
+    return tries[1]
+end
+
 function M.iniPath()
     if bindPlugin() then
         local ok, p = pcall(function() return ffi.string(fnPath()) end)
         if ok and p ~= "" then return p end
     end
-    return "mods/" .. FOLDER .. "/" .. INI
+    return folderIni()
 end
 
 local function readIni(path)
@@ -161,7 +176,11 @@ function M.poll(dt, roots)
     if not bindPlugin() then return nil end
     local ok, v = pcall(function() return fnVersion() end)
     if not ok then return nil end
-    if lastVersion == nil then lastVersion = v return nil end
+    if lastVersion == nil then
+        -- the plugin has just been found: read its ini again, the first read may have come before it loaded
+        lastVersion = v
+        return (M.apply(roots))
+    end
     if v == lastVersion then return nil end
     lastVersion = v
     return (M.apply(roots))

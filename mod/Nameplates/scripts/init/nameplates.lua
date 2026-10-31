@@ -247,6 +247,10 @@ do
             okDef = pcall(function() return ffi.typeof("NP_Matrix4") end)
         end
         pcall(ffi.cdef, [[
+            typedef struct { float x, y, z; } NP_Vector3;
+            const NP_Vector3* NP_getDerivedPosition(const void* cam) __asm__("?getDerivedPosition@Camera@Ogre@@QEBAAEBVVector3@2@XZ");
+        ]])
+        pcall(ffi.cdef, [[
             void* GetModuleHandleA(const char* name);
             void* GetProcAddress(void* module, const char* name);
         ]])
@@ -305,7 +309,9 @@ local exactUsable = ffiProj ~= nil
 local projMode = "none"
 local preferred = exactUsable and "rp" or "fb"
 local camPos = { x = 0, y = 0, z = 0 }
-local fb = { fx = 0, fy = 0, fz = 1, rx = 1, ry = 0, rz = 0, ux = 0, uy = 1, uz = 0, t = 0.414, aspect = nil }
+local viewPos = { x = 0, y = 0, z = 0 }     -- where the picture is drawn from: camPos, or Ogre's camera when a mod moves it
+local cameraDriven = false
+local fb ={ fx = 0, fy = 0, fz = 1, rx = 1, ry = 0, rz = 0, ux = 0, uy = 1, uz = 0, t = 0.414, aspect = nil }
 local fbReady = false
 local ogreFov = nil
 
@@ -387,6 +393,7 @@ local function updateCamera()
     currentCamera = cc
     if cc == nil then projMode = "none" return false end
     local fbOk = updateFallback(cc)
+    viewPos.x, viewPos.y, viewPos.z = camPos.x, camPos.y, camPos.z
     local exactOk = false
     if exactUsable then
         local ok, err = pcall(function()
@@ -398,6 +405,17 @@ local function updateCamera()
             ogreFov = { t = 1 / p[5], aspect = p[5] / p[0] }
             multiply(MFULL, p, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11])
             local cx, cy, cz = camPos.x, camPos.y, camPos.z
+            -- Direct Control's first-person and shoulder views place Ogre's camera themselves, and the game's
+            -- camera position stays where the normal camera was: the picture is then drawn from Ogre's camera
+            local okD, d = pcall(function() return ffiProj.ogre.NP_getDerivedPosition(ptr) end)
+            local driven = okD and d ~= nil and (d.x - cx) ^ 2 + (d.y - cy) ^ 2 + (d.z - cz) ^ 2 > 1
+            if driven then cx, cy, cz = d.x, d.y, d.z end
+            if driven ~= cameraDriven then
+                cameraDriven = driven
+                log(TAG .. (driven and "another mod moves the camera (first person?): plates follow Ogre's camera"
+                    or "the game's camera is back"))
+            end
+            viewPos.x, viewPos.y, viewPos.z = cx, cy, cz
             multiply(MRP, p,
                 v[0], v[1], v[2], -(v[0] * cx + v[1] * cy + v[2] * cz),
                 v[4], v[5], v[6], -(v[4] * cx + v[5] * cy + v[6] * cz),
@@ -849,6 +867,14 @@ end
 local scanList = {}
 local crossTimer = 0
 local scanId = 0
+-- First person (Direct Control) puts the camera in a character's eyes: that one gets no plate. The normal
+-- camera never comes this close (units are decimetres: within 0.6 m sideways, up to 2.5 m above the feet).
+local function cameraInside(pos)
+    local dx, dz = pos.x - viewPos.x, pos.z - viewPos.z
+    local up = viewPos.y - pos.y
+    return dx * dx + dz * dz < 36 and up > -2 and up < 25
+end
+
 local function rescan()
     local world = getGameWorld and getGameWorld()
     if world == nil then return end
@@ -875,7 +901,7 @@ local function rescan()
                 local x, y = project(pos.x, pos.y, pos.z)
                 seen = onScreen(x, y, 0.1 * W)
             end
-            local key = (seen and not hiddenIndoors(c, pi)) and keyOf(c) or nil
+            local key = (seen and not hiddenIndoors(c, pi) and not cameraInside(pos)) and keyOf(c) or nil
             -- a corpse never gets a plate: skip it before its faction, bounty and health are read, which on a
             -- battlefield full of bodies is most of the work of every scan (a plate it had fades out)
             if key then

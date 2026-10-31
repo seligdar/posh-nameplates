@@ -31,6 +31,7 @@ class Mod:
     ini: str
     lua_module: str
     folder: str                    # mod folder, for reading the ini when the plugin is not loaded
+    workshop_id: str               # Workshop item, whose folder holds the ini for subscribers
     sections: list[Section]
     script_texts: tuple[str, ...]  # texts the script itself shows: lang key script.<name>
 
@@ -42,7 +43,7 @@ def hexcol(r: float, g: float, b: float) -> str:
 
 MOD = Mod(
     mod_id='PoshNameplates', title='Posh Nameplates', dll='PoshNameplatesMCM.dll',
-    ini='Nameplates.ini', lua_module='np_settings', folder='Nameplates',
+    ini='Nameplates.ini', lua_module='np_settings', folder='Nameplates', workshop_id='3822135808',
     sections=[
         Section('who', [
             Item('Enabled', 'bool', 'CONFIG', ('enabled',), True),

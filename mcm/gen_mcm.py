@@ -238,6 +238,7 @@ def lua_for(mod: Mod, langs: list[Lang]) -> str:
             .replace("@DLL@", mod.dll)
             .replace("@INI@", mod.ini)
             .replace("@FOLDER@", mod.folder)
+            .replace("@WORKSHOP@", mod.workshop_id)
             .replace("@ITEMS@", "\n".join(items))
             .replace("@TEXTS@", "\n".join(texts)))
 

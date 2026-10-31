@@ -28,7 +28,10 @@ for i = 1, 16 do PROJ.m[i-1] = p[i] end
 FAKE_VTBL = ffi.new("uint8_t[64]")
 FAKECAM = ffi.new("uintptr_t[2]")
 FAKECAM[0] = ffi.cast("uintptr_t", FAKE_VTBL)
-NP_TEST_OGRE = { NP_getViewMatrix = function() return VIEW end, NP_getProjMatrix = function() return PROJ end }
+-- Ogre's camera stands where the game's camera is, unless a test moves it (DERIVED), as Direct Control does
+DERIVED = nil
+NP_TEST_OGRE = { NP_getViewMatrix = function() return VIEW end, NP_getProjMatrix = function() return PROJ end,
+    NP_getDerivedPosition = function() return DERIVED or getPlayerInterface().camera:getCameraPos() end }
 '''
 
 
@@ -701,10 +704,106 @@ def ko_language() -> None:
     print(f"knocked-out mark: {', '.join(l.code for l in langs)}, unknown language -> English, a new lang file, no settings.cfg: ok")
 
 
+def first_person() -> None:
+    """Direct Control's first person places Ogre's camera in your character's eyes itself, while the game's camera
+    position stays where the normal camera was (Workshop comment by MarcyKo). Plates are drawn from Ogre's camera
+    then, and the character the camera sits in gets none; back in the normal camera everything is as before."""
+    g = Game("exact")
+    g.x('''
+        B = newFaction("Bandits", -100, false)
+        H = newChar("h1", 0, -40, { enemy = true, faction = B, name = "Bandit" })
+        S = newChar("s1", 0, 0, { player = true, faction = PLAYER_FACTION, name = "Hero" })
+    ''')
+    g.load()
+    g.run(1.0)
+    assert g.plate("h1").get("frame") and g.plate("s1").get("frame"), "normal camera: both plates"
+    normal_y = g.plate("h1")["frame"]["y"]
+
+    # the hero's eyes are 1.6 m up; the view looks straight ahead along -z, at the bandit 4 m away
+    g.x('''
+        SAVED_VIEW = {}
+        for i = 0, 15 do SAVED_VIEW[i] = VIEW.m[i] end
+        local v = { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1 }
+        for i = 1, 16 do VIEW.m[i - 1] = v[i] end
+        DERIVED = { x = 0, y = 16, z = 0 }
+        GAME_VISIBLE = PI.camera.isVisible
+        -- the game counts your own body around the camera as seen, and everyone ahead
+        PI.camera.isVisible = function(self, pos) return pos.z < 1 end
+    ''')
+    g.run(4.0)
+    bandit, hero = g.plate("h1"), g.plate("s1")
+    assert not hero.get("frame"), "the character the camera sits in has no plate"
+    f = bandit["frame"]
+    centre_x = f["x"] + f["w"] / 2
+    # the bandit's head (1.7 m) is a little above the eyes, so his plate sits a little above the screen centre
+    assert near(centre_x, 960, 40), centre_x
+    assert 250 < f["y"] < 600, ("plate above the middle of a 1200 px screen", f["y"], "normal camera", normal_y)
+    assert any("another mod moves the camera" in s for s in g.logs()), g.logs()
+
+    g.x('''
+        for i = 0, 15 do VIEW.m[i] = SAVED_VIEW[i] end
+        DERIVED = nil
+        PI.camera.isVisible = GAME_VISIBLE
+    ''')
+    g.run(1.0)
+    assert g.plate("s1").get("frame"), "normal camera again: the hero's plate is back"
+    assert near(g.plate("h1")["frame"]["y"], normal_y, 2), "and the bandit's plate is where it was"
+    assert any("the game's camera is back" in s for s in g.logs()), g.logs()
+    assert not [s for s in g.logs() if "error" in s.lower()], g.logs()
+    print("first person (Direct Control): plates from Ogre's camera, none for yourself, normal camera after: ok")
+
+
+def settings_before_plugin() -> None:
+    """KenshiLua runs the script as soon as it loads itself; with KenshiLua above this mod in the load order the
+    MCM plugin is not loaded yet. A Workshop subscriber's ini is in the Workshop folder, so the settings fell back
+    to defaults on every start (Workshop comment by Smuggler: "show by a key" reset after a restart).
+    Now the Workshop folder is read too, and the ini is read again when the plugin turns up.
+    Loads the real MCM plugin into this process, so it runs last."""
+    import os
+    import shutil
+    import tempfile
+    here = os.getcwd()
+    try:
+        # 1. Workshop layout, plugin not loaded: the ini next to where the plugin will be is read at start
+        root = Path(tempfile.mkdtemp())
+        game = root / "steamapps" / "common" / "Kenshi"
+        item = root / "steamapps" / "workshop" / "content" / "233860" / "3822135808"
+        game.mkdir(parents=True)
+        item.mkdir(parents=True)
+        (item / "Nameplates.ini").write_text("[PoshNameplates]\nHotkeyMode=hold\nHotkey=G\n", encoding="utf-8")
+        os.chdir(game)
+        g = Game("exact")
+        g.x('NP_TEST_KEYS = { down = function() return false end, focused = function() return true end }')
+        g.x('B = newFaction("Bandits", -100, false); H = newChar("h1", -10, 0, { enemy = true, faction = B, name = "Bandit" })')
+        g.load()
+        assert g.e("Nameplates.settings().hotkeyMode") == "hold", g.e("Nameplates.settings().hotkeyMode")
+        assert g.e("Nameplates.settings().hotkey") == "G"
+        g.run(1.0)
+        assert g.drawn_groups() == 0, "hold without the key: no plates"
+
+        # 2. the plugin loads after the script started: its ini is read as soon as it is found
+        plugin_dir = Path(tempfile.mkdtemp())
+        shutil.copy(HERE.parent / "mod" / "Nameplates" / "PoshNameplatesMCM.dll", plugin_dir)
+        (plugin_dir / "Nameplates.ini").write_text("[PoshNameplates]\nHotkeyMode=toggle\nShowNeutral=never\n", encoding="utf-8")
+        os.chdir(Path(tempfile.mkdtemp()))
+        g = Game("exact")
+        g.load()
+        assert g.e("Nameplates.settings().hotkeyMode") == "off", "no ini anywhere yet: defaults"
+        g.x(f'PLUGIN = require("ffi").load([[{(plugin_dir / "PoshNameplatesMCM.dll").as_posix()}]])')
+        g.run(1.0)
+        assert g.e("Nameplates.settings().hotkeyMode") == "toggle", g.e("Nameplates.settings().hotkeyMode")
+        assert g.e("Nameplates.settings().show.neutral") == "never"
+        assert any("settings changed: HotkeyMode, ShowNeutral" in s for s in g.logs()), g.logs()
+    finally:
+        os.chdir(here)
+    print("settings: read from the Workshop folder before the plugin loads, and again once it is found: ok")
+
+
 if __name__ == "__main__":
     for m in ("fallback", "exact"):
         main(m)
         crowd(m)
+    first_person()
     hotkey()
     only_frame_event()
     for_hire()
@@ -712,3 +811,4 @@ if __name__ == "__main__":
     ko_language()
     unique_and_old_lua()
     blunt_stun()
+    settings_before_plugin()
