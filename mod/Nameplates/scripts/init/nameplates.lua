@@ -553,21 +553,35 @@ end
 -- The game's health of a part is flesh minus stun: a hit takes cut, pierce and part of the blunt damage from
 -- flesh and puts the rest of the blunt damage (and any extra stun) into stun, which wears off later
 -- (HealthPartStatus::applyDamage). Death comes only from flesh.
+-- The character falls when a deadly part (head, chest, stomach: "death" in the body part data, `fatal` here)
+-- drops below his knockout point: flesh minus stun plus jury-rigging (a skeleton's repair kit) under
+-- -(10 + 75 * Toughness * age multiplier / 100), from -10 at Toughness 0 to -85 at 100. That is the game's own
+-- check (the body part state in kenshi_x64.exe 1.0.65: the knockout point is MedicalSystem's lerp of GLOBAL
+-- CONSTANTS "min/max toughness ko point", 10 and 85 since rebirth.mod, by CharStats _toughness * ageMult / 100).
+-- So the bar runs from full health down to that point, not to zero. Arms and legs "collapse" too, but only the
+-- limb goes limp: a dead arm leaves the character fighting with the other.
+local KO_POINT_MIN, KO_POINT_MAX = 10, 85
+
+local function knockoutPoint(stats)
+    return -(KO_POINT_MIN + (KO_POINT_MAX - KO_POINT_MIN) * stats._toughness * stats.ageMult * 0.01)
+end
+
 local function readHealth(c)
     local med = c.medical
     if med == nil then med = c:getMedical() end
+    local ko = knockoutPoint(med.stats)
     local koFrac, deathFrac, anyFrac = 1, 1, 1
     local vital = false
     for _, part in ipairs(med.anatomy) do
         local mh = part:maxHealth()
         if mh and mh > 0 then
-            local f = (part.flesh - (part.fleshStun or 0)) / mh
-            anyFrac = min(anyFrac, f)
-            if part.collapses then
+            local h = part.flesh - (part.fleshStun or 0)
+            anyFrac = min(anyFrac, h / mh)
+            if part.fatal then
                 vital = true
-                koFrac = min(koFrac, f)
+                koFrac = min(koFrac, (h + (part.juryRigging or 0) - ko) / (mh - ko))
+                deathFrac = min(deathFrac, (part.flesh + mh) / mh)
             end
-            if part.fatal then deathFrac = min(deathFrac, (part.flesh + mh) / mh) end
         end
     end
     if not vital then koFrac = anyFrac end

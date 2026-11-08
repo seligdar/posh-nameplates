@@ -44,7 +44,10 @@ function newChar(id, x, z, opts)
     for i = 1, 7 do
         parts[i] = { flesh = 100, fleshStun = 0, collapses = VITAL[i], fatal = VITAL[i], maxHealth = function() return 100 end }
     end
-    local med = { anatomy = parts, blood = 100, unconcious = false, dead = false }
+    for i = 1, 7 do parts[i].juryRigging = 0 end
+    -- CharStats as the game has it: Toughness 0 knocks out at -10, opts.toughness 100 at -85
+    local med = { anatomy = parts, blood = 100, unconcious = false, dead = false,
+        stats = { _toughness = opts.toughness or 0, ageMult = 1 } }
     function med:getMaxBlood() return self.noBlood and 0 or 100 end
     local c = setmetatable({ id = id, alive = true, x = x, y = 0, z = z, player = opts.player, enemy = opts.enemy,
         faction = opts.faction, robot = opts.robot, height = opts.height or 17, lying = false, medical = med,

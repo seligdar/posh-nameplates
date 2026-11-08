@@ -173,7 +173,7 @@ def main(mode: str) -> None:
     g.x("N.building = nil")
     g.x("N.medical.anatomy[2].flesh = 70")
     g.run(1.0)
-    assert near(g.plate("n1")["fill"]["w"], 104 * s * 0.7, 2), g.plate("n1")["fill"]["w"]
+    assert near(g.plate("n1")["fill"]["w"], 104 * s * 80 / 110, 2), g.plate("n1")["fill"]["w"]   # down at -10
     print("3 indoors hidden until the roof is lifted: ok")
 
     # 4 a hit: the bar slides down, the trail holds then follows
@@ -184,7 +184,7 @@ def main(mode: str) -> None:
     assert p["fill"]["w"] < 104 * s * 0.6, p["fill"]["w"]
     g.run(2.5)
     p = g.plate("h1")
-    assert near(p["fill"]["w"], 104 * s * 0.4, 2), p["fill"]["w"]
+    assert near(p["fill"]["w"], 104 * s * 50 / 110, 2), p["fill"]["w"]
     assert "trail" not in p or p["trail"]["w"] - p["fill"]["w"] < 3, p.get("trail")
     assert "spark" in p
     print("4 damage trail: ok")
@@ -508,12 +508,74 @@ def blunt_stun() -> None:
     g.x("H.medical.anatomy[2].flesh = 90; H.medical.anatomy[2].fleshStun = 40")     # health 50 of 100
     g.run(2.0)
     w = g.plate("h1")["fill"]["w"]
-    assert abs(w - 104 * s * 0.5) < 2, w
+    assert abs(w - 104 * s * 60 / 110) < 2, w
     g.x("H.medical.anatomy[2].fleshStun = 0")                                      # stun worn off: 90
     g.run(2.0)
     w = g.plate("h1")["fill"]["w"]
-    assert abs(w - 104 * s * 0.9) < 2, w
+    assert abs(w - 104 * s * 100 / 110) < 2, w
     print("blunt: the bar is flesh minus stun, and refills as stun wears off: ok")
+
+
+def knockout_point() -> None:
+    """A tough character fights on below zero: the bar runs down to his knockout point, over head, chest and
+    stomach only. A limb at zero goes limp but does not knock him out, so it leaves the bar alone."""
+    g = Game("exact")
+    g.x('''
+        B = newFaction("Bandits", -100, false)
+        T = newChar("t1", -10, 0, { enemy = true, faction = B, name = "Tough", toughness = 100 })
+        W = newChar("w1", 10, 0, { enemy = true, faction = B, name = "Weak" })
+    ''')
+    g.load()
+    g.run(1.0)
+    s = 1200 / 1080
+    full = 104 * s
+
+    def fill(key: str) -> float:
+        return g.plate(key).get("fill", {}).get("w", 0)                         # an empty bar draws no fill
+
+    assert abs(fill("t1") - full) < 1.5 and abs(fill("w1") - full) < 1.5
+    g.x("T.medical.anatomy[2].flesh = 0; W.medical.anatomy[2].flesh = 0")       # chest at zero, both still up
+    g.run(2.5)
+    assert abs(fill("t1") - full * 85 / 185) < 2, fill("t1")                     # Toughness 100: down at -85
+    assert abs(fill("w1") - full * 10 / 110) < 2, fill("w1")                     # Toughness 0: down at -10
+    g.x("T.medical.anatomy[2].flesh = -75; W.medical.anatomy[2].flesh = -10")
+    g.run(2.5)
+    assert abs(fill("t1") - full * 10 / 185) < 2, fill("t1")
+    assert fill("w1") < 1, fill("w1")
+    g.x("T.medical.anatomy[2].flesh = -85")
+    g.run(2.5)
+    assert fill("t1") < 1, fill("t1")
+    g.x("T.medical.anatomy[2].flesh = 0; T.medical.anatomy[2].fleshStun = 50")  # stun counts like the game's check
+    g.run(2.5)
+    assert abs(fill("t1") - full * 35 / 185) < 2, fill("t1")
+    print("knockout point: the bar runs to -(10 + 75 * Toughness / 100), stun included: ok")
+
+    g = Game("exact")
+    g.x('''
+        B = newFaction("Bandits", -100, false)
+        K = newChar("k1", -10, 0, { enemy = true, faction = B, name = "Skeleton", robot = true })
+    ''')
+    g.load()
+    g.run(1.0)
+    g.x("K.medical.anatomy[2].flesh = -20; K.medical.anatomy[2].juryRigging = 15")   # a repair kit holds him up
+    g.run(2.5)
+    w = g.plate("k1").get("fill", {}).get("w", 0)
+    assert abs(w - full * 5 / 110) < 2, w
+    print("knockout point: jury-rigging keeps a skeleton up the way the game counts it: ok")
+
+    g = Game("exact")
+    g.x('''
+        B = newFaction("Bandits", -100, false)
+        A = newChar("a1", -10, 0, { enemy = true, faction = B, name = "Armless" })
+        for i = 4, 7 do A.medical.anatomy[i].collapses = true end               -- limbs collapse, as in the game
+    ''')
+    g.load()
+    g.run(1.0)
+    g.x("A.medical.anatomy[4].flesh = -60; A.medical.anatomy[6].flesh = 0")      # an arm and a leg gone limp
+    g.run(2.5)
+    w = g.plate("a1")["fill"]["w"]
+    assert abs(w - 104 * s) < 1.5, w
+    print("knockout point: a limp arm or leg does not empty the bar: ok")
 
 
 def unique_and_old_lua() -> None:
@@ -811,4 +873,5 @@ if __name__ == "__main__":
     ko_language()
     unique_and_old_lua()
     blunt_stun()
+    knockout_point()
     settings_before_plugin()
